@@ -483,22 +483,15 @@ class MDDocument(object):
         rebulid_title_tree(): Reconstruye el arbol de títulos.
         title_level(md_txt): Devuelve el nivel del título
         find_children_titles(parent_title): Devuelve una lista MDLine con los titulos hijos del título indicado.
-        append_line(md_text_line):
-        append_line(md_text_lines):
-        insert_line(id_line, md_text_line):
-        insert_lines(id_line, md_text_lines):
-        remove_line(md_line):
-        remove_lines(md_lines):
-        clear_lines():
-        move_line_up(md_line)
-        move_up_lines(ed_line, cant_lines):
-        move_line_down(md_line):
-        move_down_lines(ed_line, cant_lines):
-        move_line_to(num_line, ed_line):
-        move_lines_to(num_line, ed_line, cant_lines):
+        append_line(md_text_line): Agrega una línea al final (usado por la carga).
+        append_lines(md_text_lines): Agrega varias líneas al final.
         get_markup_text(extensions=None):
-        update_type_line(md_line):
-        update_family(self, mdline):
+        update_type_line(md_line): Detecta y asigna el tipo de una línea.
+
+    Nota: la mutación estructural (insertar/borrar/mover líneas) la orquesta
+    ahora el DocumentStateManager (V2), que mantiene esta lista en sync. Los
+    métodos estructurales viejos de MDDocument se removieron (ver git history);
+    esta clase es la capa de lectura/escritura del documento.
     """
 
     def __init__(self, **kwargs):
@@ -709,106 +702,6 @@ class MDDocument(object):
             self.append_line(md_txt_line)
         return True
 
-    def insert_line(self, id_line, md_text_line):
-        '''Inserta una nueva linea delante del id_line indicado'''
-        if id_line > 0:
-            prev_line = self._md_lines[id_line-1]
-        else:
-            prev_line = None
-        next_line = self._md_lines[id_line]
-        new_line = MDLine(md_text_line, type=MD_LINE_TYPE.TEXT, prev_line=prev_line, next_line=next_line)
-        self._md_lines.insert(id_line, new_line)
-        self.update_type_line(new_line)  # Actualiza al tipo de linea
-        # Actualizar las referencias de las linea previa y posterior
-        prev_line.next_line = new_line
-        next_line.prev_line = new_line
-
-
-        # TODO: Actualizar el arbol
-
-        return new_line
-
-    def insert_lines(self, id_line, md_text_lines):
-        """
-        Inserta las nuevas lineas delante del id_line indicado
-        md_text puede ser un texto multilinea o una lista lineas de texto
-        """
-        if isinstance(md_text_lines, str):
-            md_text_line = md_text_lines.splitlines(keepends=True)
-        elif not (isinstance(md_text_lines, list)):
-            raise ValueError("md_text is not a string or list")
-        for md_text_line in md_text_lines:
-            md_text_line = md_text_line.rstrip("\n")
-            self.insert_line(id_line, md_text_line)
-            id_line += 1
-        return True
-
-    def remove_line(self, md_line):
-        id_line = self._md_lines.index(md_line)
-        prevl = self._md_lines[id_line - 1]
-        nextl = self._md_lines[id_line + 1]
-        prevl.next_line = nextl
-        nextl.prev_line = prevl
-        self._md_lines.remove(md_line)
-        self.update_type_line(prevl)  # TODO: Esto puede no funcionar con tablas o bloques si se borra la inicializacion o finalizacion del bloque
-        self.update_type_line(nextl)
-        return True
-
-    def remove_lines(self, md_lines):
-        if not (isinstance(md_lines, list)):
-            raise ValueError("md_text is not a list")
-        for md_line in md_lines:
-            self.remove_line(md_line)
-        return True
-
-    def clear_lines(self):
-        self._md_lines.clear()
-
-    def move_line_up(self, md_line):
-        id = self._md_lines.index(md_line)
-        mdd = self._md_lines
-        mdd[id], mdd[id - 1] = mdd[id - 1], mdd[id]
-
-    def move_up_lines(self, ed_line, cant_lines):
-        """
-        Parameters:
-            ed_line (MDEditorLine): Primer linea de la seleccion
-            cant_lines (int): Cantidad de lineas selccionadas debajo de ed_line.
-        """
-        # TODO: Sin Codificar
-        pass
-
-    def move_line_down(self, md_line):  # TODO: EN PROCESO
-        id = self._md_lines.index(md_line)
-        mdd = self._md_lines
-        mdd[id], mdd[id + 1] = mdd[id + 1], mdd[id]
-        # mdd = self._md_document
-        # mdd.md_lines[id], mdd.md_lines[id + 1] = mdd.md_lines[id + 1], mdd.md_lines[id]
-
-    def move_down_lines(self, ed_line, cant_lines):
-        """
-        Parameters:
-            ed_line (MDEditorLine): Primer linea de la seleccion
-            cant_lines (int): Cantidad de lineas selccionadas debajo de ed_line.
-        """
-        # TODO: Sin Codificar
-        pass
-
-    def move_line_to(self, num_line, ed_line):
-        '''Mueve ed_line a la poscion num_line'''
-        # TODO: Sin Codificar
-        pass
-
-    def move_lines_to(self, num_line, ed_line, cant_lines):
-        """
-        Parameters:
-            num_line (int): Numero de linea destino de la seleccion
-            ed_line (MDEditorLine): Primer linea de la seleccion
-            cant_lines (int): Cantidad de lineas selccionadas debajo de ed_line.
-        """
-        # TODO: Sin Codificar
-        pass
-
     """ MarkDown Functions -----------------------------------------------------------"""
     def get_markup_text(self, extensions=None):
         translate_mku = TranslateMarkdownToKVMarkup(extensions)
@@ -869,6 +762,3 @@ class MDDocument(object):
         else:
             md_line.type = MD_LINE_TYPE.TEXT
 
-    def update_family(self, mdline):  # TODO: Sin Codificar
-        '''Update parent and childs of md_line and related md_lines'''
-        raise ValueError("BLOQUE SIN CODIFICAR")
