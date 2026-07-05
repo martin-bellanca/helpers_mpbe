@@ -202,16 +202,16 @@ class MDLine(EventDispatcher):
             return False
 
     def get_title_level(self) -> int:
-        '''Devuelve el nivel de título'''
-        if self.type in [MD_LINE_TYPE.TITLE, MD_LINE_TYPE.HEAD_TITLE, MD_LINE_TYPE.UNDERLINE_TITLE]:
-            contador = 1
-        else:
-            contador = 0
-            for char in self.md_text:
-                if char == '#':
-                    contador += 1
-                else:
-                    break
+        '''Devuelve el nivel de título: cuenta los '#' iniciales (1-6);
+        títulos subrayados (===/---) → nivel 1; 0 si no es título.'''
+        if self.type in [MD_LINE_TYPE.HEAD_TITLE, MD_LINE_TYPE.UNDERLINE_TITLE]:
+            return 1
+        contador = 0
+        for char in self.md_text:
+            if char == '#':
+                contador += 1
+            else:
+                break
         return contador
 
     def get_title_Childs(self) -> list['MDLine']: # SEGUIR DE ACA
